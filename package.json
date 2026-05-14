@@ -1,0 +1,17 @@
+{
+  "name": "craft-coffee-website",
+  "version": "1.0.0",
+  "description": "Premium coffee shop website with scroll-driven animations",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "keywords": [
+    "coffee",
+    "animation",
+    "canvas",
+    "vercel"
+  ],
+  "author": "Armaan Akhtar",
+  "license": "MIT"
+}

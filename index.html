@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Craft Coffee | The Ritual of Brewing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-border {
+            border: 1px solid rgba(158, 142, 130, 0.2);
+        }
+        .hero-gradient {
+            background: linear-gradient(to bottom, rgba(19, 19, 19, 0.4), rgba(19, 19, 19, 0.95));
+        }
+        .glow-hover:hover {
+            box-shadow: 0 0 30px rgba(248, 186, 130, 0.15);
+        }
+
+        /* Hero Animation & Loader Styles */
+        #loader {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: #131313;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+        #loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-inner { text-align: center; }
+        .loader-ring {
+            width: 56px;
+            height: 56px;
+            border: 3px solid rgba(248, 186, 130, 0.15);
+            border-top-color: #f8ba82;
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text { font-size: 14px; font-weight: 300; color: #9e8e82; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+        .loader-progress-track { width: 200px; height: 3px; background: rgba(248, 186, 130, 0.1); border-radius: 3px; overflow: hidden; margin: 0 auto 12px; }
+        .loader-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #f8ba82, #dec1af); border-radius: 3px; transition: width 0.2s ease-out; }
+        .loader-percent { font-size: 28px; font-weight: 600; color: #f8ba82; }
+
+        #scrollProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            background: linear-gradient(90deg, #f8ba82, #dec1af);
+            z-index: 9999;
+            transition: width 0.05s linear;
+        }
+
+        #hero { position: relative; height: 600vh; }
+        #frameCanvas {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            background: #131313;
+        }
+        .hero-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hero-content { text-align: center; transition: opacity 0.5s ease, transform 0.5s ease; }
+        .hero-tagline { font-size: 13px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: #f8ba82; margin-bottom: 16px; }
+        .hero-title { font-size: clamp(48px, 8vw, 100px); font-weight: 800; line-height: 1.05; color: #e5e2e1; margin-bottom: 20px; }
+        .title-accent { background: linear-gradient(135deg, #f8ba82, #dec1af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero-sub { font-size: clamp(16px, 2vw, 20px); font-weight: 300; color: rgba(229, 226, 225, 0.8); max-width: 640px; margin: 0 auto; }
+
+        .scroll-indicator {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: opacity 0.5s ease;
+        }
+        .scroll-indicator.hidden { opacity: 0; pointer-events: none; }
+        .scroll-mouse { width: 26px; height: 42px; border: 2px solid rgba(248, 186, 130, 0.5); border-radius: 14px; display: flex; justify-content: center; padding-top: 8px; }
+        .scroll-wheel { width: 3px; height: 10px; background: #f8ba82; border-radius: 3px; animation: scrollBounce 2s ease-in-out infinite; }
+        @keyframes scrollBounce { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(10px); opacity: 0.3; } }
+        .scroll-text { font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: #f8ba82; }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#131313",
+                    "surface-container-lowest": "#0e0e0e",
+                    "tertiary-fixed": "#e4e4cc",
+                    "on-primary": "#4b2800",
+                    "primary": "#f8ba82",
+                    "on-secondary-container": "#ccb09f",
+                    "secondary": "#dec1af",
+                    "tertiary-fixed-dim": "#c8c8b0",
+                    "tertiary": "#c8c8b0",
+                    "on-secondary-fixed-variant": "#574335",
+                    "secondary-container": "#574335",
+                    "surface-variant": "#353534",
+                    "background": "#131313",
+                    "secondary-fixed-dim": "#dec1af",
+                    "surface-tint": "#f8ba82",
+                    "outline": "#9e8e82",
+                    "on-tertiary-fixed": "#1b1d0e",
+                    "on-error-container": "#ffdad6",
+                    "on-surface-variant": "#d5c3b6",
+                    "error-container": "#93000a",
+                    "secondary-fixed": "#fbddca",
+                    "on-primary-container": "#4d2900",
+                    "inverse-on-surface": "#313030",
+                    "on-tertiary-fixed-variant": "#474836",
+                    "primary-fixed-dim": "#f8ba82",
+                    "inverse-primary": "#825425",
+                    "on-secondary-fixed": "#28180d",
+                    "on-background": "#e5e2e1",
+                    "surface-bright": "#393939",
+                    "surface-container": "#201f1f",
+                    "inverse-surface": "#e5e2e1",
+                    "on-tertiary-container": "#313322",
+                    "primary-fixed": "#ffdcc0",
+                    "on-primary-fixed-variant": "#673d10",
+                    "primary-container": "#c68e5a",
+                    "outline-variant": "#51443a",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container-high": "#2a2a2a",
+                    "on-tertiary": "#303221",
+                    "error": "#ffb4ab",
+                    "on-surface": "#e5e2e1",
+                    "tertiary-container": "#9a9b85",
+                    "on-secondary": "#3f2c20",
+                    "on-error": "#690005",
+                    "surface-container-highest": "#353534",
+                    "surface-dim": "#131313",
+                    "on-primary-fixed": "#2d1600"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "80px",
+                    "base": "8px",
+                    "margin-mobile": "20px",
+                    "gutter": "24px",
+                    "max-width": "1440px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Playfair Display"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "headline-sm": ["Playfair Display"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Playfair Display"],
+                    "display-lg-mobile": ["Playfair Display"],
+                    "label-caps": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "display-lg": ["64px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-sm": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-md": ["32px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "display-lg-mobile": ["40px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md overflow-x-hidden">
+    <!-- Loading Screen -->
+    <div id="loader">
+        <div class="loader-inner">
+            <div class="loader-ring"></div>
+            <p class="loader-text">Loading frames...</p>
+            <div class="loader-progress-track">
+                <div class="loader-progress-bar" id="loaderBar"></div>
+            </div>
+            <p class="loader-percent" id="loaderPercent">0%</p>
+        </div>
+    </div>
+
+    <!-- Scroll Progress Bar -->
+    <div id="scrollProgress"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-lg border-b border-outline-variant/20 shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-all">
+<nav class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto">
+<div class="flex items-center gap-base">
+<span class="font-display-lg text-headline-md text-primary tracking-tight">Craft Coffee</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-primary font-semibold border-b-2 border-primary pb-1 font-body-md" href="#">Home</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300 font-body-md" href="#">Roastery</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300 font-body-md" href="#">Menu</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300 font-body-md" href="#">Rituals</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-300 font-body-md" href="#">Locations</a>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="material-symbols-outlined hover:text-primary transition-all duration-300">search</button>
+<button class="material-symbols-outlined hover:text-primary transition-all duration-300">music_note</button>
+<button class="material-symbols-outlined hover:text-primary transition-all duration-300">shopping_bag</button>
+</div>
+<button class="hidden md:block bg-primary text-on-primary font-semibold px-6 py-2 rounded-full hover:bg-primary-container transition-all active:scale-95">Order Now</button>
+<button class="md:hidden material-symbols-outlined text-primary">menu</button>
+</div>
+</nav>
+</header>
+<!-- Hero Section with Canvas Animation -->
+<section id="hero">
+    <canvas id="frameCanvas"></canvas>
+    
+    <!-- Overlay Content -->
+    <div class="hero-overlay" id="heroOverlay">
+        <div class="hero-content hero-intro" id="heroIntro">
+            <p class="hero-tagline">Scroll to Discover</p>
+            <h1 class="hero-title">Crafted Coffee,<br><span class="title-accent">Cozy Moments.</span></h1>
+            <p class="hero-sub">Single-origin beans, slow-poured rituals, and a candle-lit corner waiting just for you. Welcome to your favourite new café.</p>
+        </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator" id="scrollIndicator">
+        <div class="scroll-mouse">
+            <div class="scroll-wheel"></div>
+        </div>
+        <p class="scroll-text">Scroll Down</p>
+    </div>
+</section>
+<!-- Featured Categories -->
+<section class="py-24 px-margin-mobile md:px-margin-desktop bg-surface">
+<div class="max-w-max-width mx-auto">
+<div class="mb-16 text-center md:text-left">
+<h2 class="font-display-lg text-headline-md text-primary mb-4">Curated Selections</h2>
+<div class="w-24 h-1 bg-primary mx-auto md:mx-0"></div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-gutter">
+<!-- Category Card -->
+<div class="group cursor-pointer">
+<div class="aspect-square rounded-full overflow-hidden mb-4 border border-outline-variant/30 group-hover:border-primary transition-all p-1">
+<img class="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500" data-alt="A macro shot of a perfectly pulled espresso shot in a clear glass cup with thick golden crema on top. The background is dark and matte, emphasizing the warm, rich colors of the coffee. The lighting is focused and cinematic, creating a luxurious and focused aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl3EC1Pkv1Dq5gTyHna0dkA40CJYmodiD6KWMtvyVUAGQkCW8x85PhThdupzSMu_ceKNWTUX3RhoyJVERcJUWUukATxXCYm2uIop52iOx3mi4a39A0AG0LSGLU0YzAQmMsOsXSSis25BdA-3JWOGwXzoezYZsFpScUGyusAPP1g68VsBJZsQR9RXTVVbyV4ezyHuY86jFZZndHLySoWOiV1C260PZt59vrv9XueAjsT0fvTxBM_prGl5QBULUa7s6XO9FtES6CzNKX"/>
+</div>
+<p class="text-center font-label-caps text-on-surface-variant group-hover:text-primary transition-colors">Hot Coffee</p>
+</div>
+<!-- Repeat Categories -->
+<div class="group cursor-pointer">
+<div class="aspect-square rounded-full overflow-hidden mb-4 border border-outline-variant/30 group-hover:border-primary transition-all p-1">
+<img class="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500" data-alt="Refreshing cold brew coffee with large ice cubes in a tall glass tumbler. Condensation droplets are visible on the outside of the glass, reflecting the cool, dim ambient lighting of a high-end coffee bar. The aesthetic is crisp, minimal, and organic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDY_YjzJoOv3uNHUPz0kM4cyyZtGC0ELciLx8S0q5if7H3i2QNIHJKVnL3UzhIcx4u9b8bFjgecOXpLZwuZqo7YU0S5nq6Og2N8NF_-dWx-9XmhU3lInAxpXgMJzL9gSCefDMH9oy4xBx1zgki9VtfEmbfMxtTI0aijGiHMWgYQola3KW7vMaGj_SSf0g5_-11sk-FHVsWTA7iPITlxBQpzAUfNg3gn-4VCHIyOWvwSQLo9WKoK79O41kmKn-ES9O1tedKPcIGOXVxG"/>
+</div>
+<p class="text-center font-label-caps text-on-surface-variant group-hover:text-primary transition-colors">Cold Coffee</p>
+</div>
+<div class="group cursor-pointer">
+<div class="aspect-square rounded-full overflow-hidden mb-4 border border-outline-variant/30 group-hover:border-primary transition-all p-1">
+<img class="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500" data-alt="A minimalist white ceramic cup of intense espresso resting on a textured dark wood table. A silver spoon lies beside it, catching the glint of soft atmospheric lighting. The mood is intimate and focused on the precision of the beverage." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB1AghKCAg2PitgUGTs5Dlbz8M-9uquBR6eiucD7LeQAdqvl7dj48-92y-VRsnu6tq4fsRDehT03m1Gd5jsEPYv2Ww9BGifmt9bR6Fk0-JdPCSBQG0LJOIMt6FmPsW5YXR2MeLL-HDutCnyWTFztZy6VtWZx3EbNOstowyVXTKmM-IhhTvHn1fCTZb-nRpVSxvhpcD1LtpVS1PPy6MyxOrMLThC699nMoeMYFczoMPXtKBdyZuYBNTrZrBPnjS44OxNSDEgTe3UpY-"/>
+</div>
+<p class="text-center font-label-caps text-on-surface-variant group-hover:text-primary transition-colors">Espresso</p>
+</div>
+<div class="group cursor-pointer">
+<div class="aspect-square rounded-full overflow-hidden mb-4 border border-outline-variant/30 group-hover:border-primary transition-all p-1">
+<img class="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500" data-alt="Artisanal soft drinks in elegant glass bottles with bespoke labels. The drinks have vibrant natural colors and fine carbonation bubbles, presented on a dark stone counter with muted accent lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBd4ciqM2cZs8a78YTM_Sej3sxwHWzx2w9p53AFPibBI5PDL59Y3qMhyT-5XKJ5sOdkiVjukAuuL1sCsE87VHCIm0uSVZgbw6685l-6W-bTcz21yK43NVsrfpW52aXbdI5g5HQ1colc5JbhjAhP8YiWNmN6qmAZ2KcOA3E_Maz7uU66KzPgos3HDzJHOLMy75YCzO30FIcIO7ywYE6LGEaEhJgc2VtSt6bYry1QulM-ncQfW1fiudDvzzpwqwNMVpRBHIqXzluW_k5u"/>
+</div>
+<p class="text-center font-label-caps text-on-surface-variant group-hover:text-primary transition-colors">Soft Drinks</p>
+</div>
+<div class="group cursor-pointer">
+<div class="aspect-square rounded-full overflow-hidden mb-4 border border-outline-variant/30 group-hover:border-primary transition-all p-1">
+<img class="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500" data-alt="A decadent dark chocolate lava cake with a molten center, dusted with fine powdered sugar and garnished with a single mint leaf. The dessert is presented on a matte black ceramic plate under soft, directional golden lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9cJTiKr-6cSZZHNtxyagverxL7QEEvdPrJFBwPJWWCW2A8QIYqvDrdHK7gbXuKXQOKKfDw3R3HP18mEkgtZX4FMayMWQKBbkFIKYkAXa-4qRZpXZuq11e4_gStz7jYlql4OWpKHVJK_FvRJd526Pkcvsu7lfzwl-ekNQZ5vy1fT9MQnQbukHNptJszR-bxavQr9-hzwyIKE--BNTZZVPeB4gWcUX3oE4sIK6fviuVTF_RdrjC-QHnTmNjR1mnXWoRM1QAQjLc931p"/>
+</div>
+<p class="text-center font-label-caps text-on-surface-variant group-hover:text-primary transition-colors">Desserts</p>
+</div>
+<div class="group cursor-pointer">
+<div class="aspect-square rounded-full overflow-hidden mb-4 border border-outline-variant/30 group-hover:border-primary transition-all p-1">
+<img class="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500" data-alt="A rustic display of artisanal snacks including roasted nuts and seeds served in small copper bowls on a reclaimed wood surface. The lighting is warm and invites a sense of casual luxury." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAL7TAup1G8gEt216320O5HcAB3-5LAGsEJafYvKN8Y0VFiWhThsLlwWTDdPzNiCSG0_ZnkufgDZuIbxqt9tBuQ5dl6x8V-esVlbIwQN8o3wQ3-4Q0gKrngjaRwm0qrHh1LUE60aQnp2b_KiVree1PcnulXnjhF5RBAkCYMjXm9-3XuXOeQEzdFE-itHNz3RZyyOKNPVodjRmRTbugJ2OsXlGUP9ZiLVoO5p-CYbJwvZ_stQJOIQTPFgrEC7vwe7DEkbK7Ld-pJYyk0"/>
+</div>
+<p class="text-center font-label-caps text-on-surface-variant group-hover:text-primary transition-colors">Snacks</p>
+</div>
+<div class="group cursor-pointer">
+<div class="aspect-square rounded-full overflow-hidden mb-4 border border-outline-variant/30 group-hover:border-primary transition-all p-1">
+<img class="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500" data-alt="A gourmet salad bowl with fresh organic ingredients, vibrant colors, and artistic plating. The bowl sits on a minimalist gray linen tablecloth in a bright yet moody café setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCf9mRhhTi7jG1ZyxX_iqAHbnUXyYCEYrd9AI0MmlLCWHhWDuj5OMGu6E7jSJDC_FWDFn9EU73aJJYUjPDIKDhqmWvT6mlRq91qAcfBl95pXU-bZuM9QH5Ht8qsYzhdtyh6RZwCoqhiEuQn3Drk5O2OQqPTKj0RuKphypS2Vjyy8MIqhtBFRautPmJo46Ub5WHpyDS8QDbBmiqvxRiYxDAE_g7drp0P1u74-hWTaTvVuiOu9dw4x3-Os1VhyT76kmk-qo62Mb6ciDa_"/>
+</div>
+<p class="text-center font-label-caps text-on-surface-variant group-hover:text-primary transition-colors">Main Food</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Signature Menu (Bento Grid Style) -->
+<section class="py-24 px-margin-mobile md:px-margin-desktop bg-surface-container-lowest">
+<div class="max-w-max-width mx-auto">
+<div class="mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
+<div>
+<h2 class="font-display-lg text-headline-md text-primary mb-2">Signature Crafts</h2>
+<p class="text-on-surface-variant max-w-md">Our most celebrated roasts and culinary creations, perfected over years of ritual.</p>
+</div>
+<div class="flex gap-4">
+<button class="p-3 rounded-full border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-all">
+<span class="material-symbols-outlined">west</span>
+</button>
+<button class="p-3 rounded-full border border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary transition-all">
+<span class="material-symbols-outlined">east</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+<!-- Product Card 1 -->
+<div class="group relative bg-surface-container p-6 rounded-xl border border-outline-variant/10 hover:border-primary/50 transition-all duration-500">
+<div class="aspect-[4/3] rounded-lg overflow-hidden mb-6">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="A close-up of a creamy cappuccino with heart-shaped latte art in a textured ceramic mug. The lighting is soft and side-lit, highlighting the foam's velvet texture. The background is a blurred high-end café interior with warm wood tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQfnvMM6ltnLS_iiD1yu--cxEqvx6OiebxfrHdgzVkp3jqjr7PgN7RJYK032KYOHPTyH1UR7Ow_u5qJT_n-UlyR9CN9z6thHuB8nTAe5vJ2N3U0sfPNHHkUt8bTw6wVV5901trtoL7fUhap0aHuiWvVLZKSjv31p4e50XBAAnH3tiquLU03D1Wyd5qmvubhk1W7vo3p0X2fIADSsyh8I8lj9za51XXpXJwydd82_4UdCOAD05g8k_xJD4cwSN0BcnpoGgPrZ4hbPmj"/>
+</div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-on-surface">Velvet Cappuccino</h3>
+<span class="text-primary font-bold text-headline-sm">$6.50</span>
+</div>
+<div class="flex items-center gap-1 mb-4 text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-on-surface-variant text-label-caps ml-2">(124)</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-6 line-clamp-2">Triple-shot espresso balanced with silky micro-foam and a dusting of dark cocoa.</p>
+<button class="w-full flex items-center justify-center gap-2 bg-surface-variant text-on-surface font-semibold py-3 rounded-lg hover:bg-primary hover:text-on-primary transition-all active:scale-95">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+                        Add to Cart
+                    </button>
+</div>
+<!-- Product Card 2 -->
+<div class="group relative bg-surface-container p-6 rounded-xl border border-outline-variant/10 hover:border-primary/50 transition-all duration-500">
+<div class="aspect-[4/3] rounded-lg overflow-hidden mb-6">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="An iced caramel macchiato in a faceted tall glass, showing beautiful layers of dark espresso mixing with golden caramel and white milk. The ice cubes glisten under focused café lighting. The atmosphere is sophisticated and indulgent." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0Cgrz6lZ4diAyIbi1h_YBUa5F5kxvhRuDIBlSV840ZqVjBwE2Qh2WSeATucU1rcgFL9YQ5kiKVQr1X-gHpmtF0tpxNf6QIZZGIxmblceYVytmv-FElYQ3lOGhzltVSC0yoEDA8nTmriIxpHTcaSu2ND5AfyLQb3hJW8QrcMf5QfVQl-b3GIpSvzXY6NdX-Ik6lvK3HGoUBe2MXbcV3ecASz5f5Diwiq1EPMbNRj0xDQsO-c3_TYSA_JlcqDMqxixt2l_IlNV5H7X-"/>
+</div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-on-surface">Caramel Ritual</h3>
+<span class="text-primary font-bold text-headline-sm">$7.25</span>
+</div>
+<div class="flex items-center gap-1 mb-4 text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">star</span>
+<span class="text-on-surface-variant text-label-caps ml-2">(89)</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-6 line-clamp-2">Cold-infused espresso with artisanal salted caramel and organic whole milk.</p>
+<button class="w-full flex items-center justify-center gap-2 bg-surface-variant text-on-surface font-semibold py-3 rounded-lg hover:bg-primary hover:text-on-primary transition-all active:scale-95">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+                        Add to Cart
+                    </button>
+</div>
+<!-- Product Card 3 -->
+<div class="group relative bg-surface-container p-6 rounded-xl border border-outline-variant/10 hover:border-primary/50 transition-all duration-500">
+<div class="aspect-[4/3] rounded-lg overflow-hidden mb-6">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="A thick, gooey chocolate brownie shake topped with whipped cream, chocolate shavings, and a whole brownie piece. The shake is served in a vintage-style glass jar on a dark slate board. The lighting is warm and dramatic, highlighting the rich textures." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRgdohHxkq8gSv69KQwavNuqZ4wkQkv4JBUgDHTOi_CbpEca7DkH3SPVu1hTwXVU-5OxEW9b2kkrt8CfxXvfHojBMN8PBoR1tDpn_H0T-2vKNR2YerPe26VAwDdcPero84gP63bNy1seMT1SprUxAkfPX14a2TiJiLwoJ3FzXcrNNUzkR9gOtfi_Ry-DBQ3rLCWBodOPM-yQzZhXwhxouH5uXN5rZyYCJ9-Ua9M_EBcwlOAO6JAR_88WkO1j0Eg0WLVLSQAUN2lw_y"/>
+</div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-on-surface">Brownie Shake</h3>
+<span class="text-primary font-bold text-headline-sm">$8.00</span>
+</div>
+<div class="flex items-center gap-1 mb-4 text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-on-surface-variant text-label-caps ml-2">(210)</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-6 line-clamp-2">Blend of premium vanilla bean and our house-made dark chocolate brownies.</p>
+<button class="w-full flex items-center justify-center gap-2 bg-surface-variant text-on-surface font-semibold py-3 rounded-lg hover:bg-primary hover:text-on-primary transition-all active:scale-95">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+                        Add to Cart
+                    </button>
+</div>
+<!-- Product Card 4 -->
+<div class="group relative bg-surface-container p-6 rounded-xl border border-outline-variant/10 hover:border-primary/50 transition-all duration-500">
+<div class="aspect-[4/3] rounded-lg overflow-hidden mb-6">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="A gourmet avocado toast with a poached egg, chili flakes, and microgreens on toasted sourdough bread. The dish is presented on a minimalist ceramic plate in a bright, modern café corner with soft natural light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCADw2AvdYUDHm9LzntZ-vM7Znym2mowlzN_5JhMAElAlnHSb0wTcslxNxs6hjj3MdZHyrWVCtqNmcBs-uEPLxpey1PMAFgb3ziAhN67NvyEZZnTHs0pAD-rHg37EPWiRYpemf9n0cNKAQiMlBNQXg4VAAo5V0-UQXhSMUxeYi_WIq0sY3JlO1kml0leGne0Hj5ojtIwdK14mCUqaZQfk22nUJc6uUwyEEJqR7UjlaYY_QkNEffH4feicWjmlanwLw1Z68xW7Lz-DCt"/>
+</div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-sm text-on-surface">Artisan Brunch</h3>
+<span class="text-primary font-bold text-headline-sm">$14.50</span>
+</div>
+<div class="flex items-center gap-1 mb-4 text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0.5;">star</span>
+<span class="text-on-surface-variant text-label-caps ml-2">(56)</span>
+</div>
+<p class="text-body-md text-on-surface-variant mb-6 line-clamp-2">Sourdough toast topped with smashed avocado, heirloom tomatoes, and aged balsamic.</p>
+<button class="w-full flex items-center justify-center gap-2 bg-surface-variant text-on-surface font-semibold py-3 rounded-lg hover:bg-primary hover:text-on-primary transition-all active:scale-95">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+                        Add to Cart
+                    </button>
+</div>
+</div>
+</div>
+</section>
+<!-- About Café -->
+<section class="py-32 px-margin-mobile md:px-margin-desktop bg-surface overflow-hidden">
+<div class="max-w-max-width mx-auto flex flex-col md:flex-row items-center gap-20">
+<div class="relative w-full md:w-1/2">
+<div class="aspect-[4/5] rounded-2xl overflow-hidden relative z-10 shadow-2xl">
+<img class="w-full h-full object-cover" data-alt="The warm and inviting interior of Craft Coffee during twilight. The space features exposed brick walls, leather lounge chairs, and warm Edison bulb lighting. Large windows show the soft blue evening light outside, creating a high-contrast and intimate atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9fcNFCDdcZ759IvdxRB2_IyH2tUF1C3EeTol1Xp23mtrOyyFbIbvr-8I8kJPnbt7barUMGAmtBzdMZMVouoAvai90LDPUudG9gz3loFh6lzEpxX8ZjM1G-BveyqWx-KfXvZxVDaGVdKt05uz4ln3rBcs3LdTk8oBI12O0_H57bRg211gioAWdzddAYxh6ZhlkdNr-1oD3CfOWUOatf5CrcSPfSBjzPSGRsuCmWU1_w9gVAbejp2zkgKxc4ApkheNW_uDZVwZElxvC"/>
+</div>
+<div class="absolute -bottom-10 -right-10 w-64 h-64 rounded-2xl overflow-hidden z-20 border-8 border-surface shadow-2xl hidden lg:block">
+<img class="w-full h-full object-cover" data-alt="A close-up of a vintage espresso machine brewing coffee into a ceramic cup. Metallic details gleam under the café lights, emphasizing the craftsmanship and ritual of brewing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi6OxvXKGWjWMsU4ywzEqww2-brBACwpg4bmTQ_5qUFhg6_94trBWWHhOwgJBj1pHza4dHQjYFcxlE_mbRTYJb1cTLeJaqoXZ7kVLlOlFitT5Y74j3SeIwJzIXEe9iTVkcQ93OrRLPtQFgaaydr3riD6aUvni1rk6msut7xfUTZPAIsyU6F8Fvz4oubEqgaKzh4RoVjxyEOm-V7DKMQmnAsfLRRNd8opAXEpprW92IPxIZLhUYrOd-gfTupuyPEoRD1ots0DG44SkN"/>
+</div>
+<div class="absolute -top-10 -left-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl -z-10"></div>
+</div>
+<div class="w-full md:w-1/2 space-y-8">
+<span class="text-label-caps text-primary tracking-[0.4em] uppercase font-bold">Our Story</span>
+<h2 class="font-display-lg text-headline-md md:text-display-lg-mobile text-on-surface leading-tight">Where Precision Meets Passion</h2>
+<p class="text-body-lg text-on-surface-variant leading-relaxed">Craft Coffee was born from a simple belief: coffee is more than a beverage; it is a ritual. We source our beans from small-lot farmers across the globe, roasting them in small batches to preserve their unique character.</p>
+<p class="text-body-lg text-on-surface-variant leading-relaxed">Our space is designed to be your third home—a place where time slows down, and every sip tells a story of craftsmanship and dedication.</p>
+<div class="pt-6">
+<button class="flex items-center gap-4 text-primary font-bold group">
+<span class="text-body-lg">Learn more about our Roastery</span>
+<span class="material-symbols-outlined group-hover:translate-x-2 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Special Offers (Glowing Cards) -->
+<section class="py-24 px-margin-mobile md:px-margin-desktop bg-surface-container-lowest overflow-hidden">
+<div class="max-w-max-width mx-auto">
+<h2 class="font-display-lg text-headline-md text-center text-primary mb-16">Rituals &amp; Rewards</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Offer Card 1 -->
+<div class="relative group h-[300px] rounded-2xl overflow-hidden border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent glow-hover transition-all duration-500">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-700" data-alt="A romantic shot of two coffee cups on a wooden table with soft afternoon light. The mood is warm and inviting, emphasizing the idea of shared moments. The style is soft-focus and minimalist." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrh_RNd20hzYGW0GycVpjvtanxANof9O8Q4ZSqfWYafWn3Djl7PGpmT3aOs1ZLj4y3QhIGH5DYMW_bqnXTH5SkpP_TShrpG2vl9YFHfYKnFYzdf_LkXuTEH7v3UiaUKNXl6U6LeORnH087TTFfnPysCi-eUfYIKnm7LuWdfHI0-gbBeY9tfDEY60cXVjKLc0A5P89By9bF2X6xBGo9uwacCi-ZIY0yZAHol84P3lCC254srrR9ZPYm_onA06oZYVok-1UeQmsqzZLs"/>
+</div>
+<div class="relative z-10 p-10 flex flex-col h-full justify-center">
+<span class="bg-primary text-on-primary font-bold px-3 py-1 rounded w-fit mb-4 text-label-caps">WEEKEND SPECIAL</span>
+<h3 class="font-display-lg text-headline-md text-on-surface mb-2">Buy One Get One</h3>
+<p class="text-on-surface-variant mb-6 max-w-xs">Share a ritual with a friend every Saturday morning before 11 AM.</p>
+<button class="text-primary font-bold flex items-center gap-2">Claim Offer <span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<!-- Offer Card 2 -->
+<div class="relative group h-[300px] rounded-2xl overflow-hidden border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent glow-hover transition-all duration-500">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-700" data-alt="A moody shot of a jazz singer in a dimly lit café. The lighting is low-key with golden highlights, creating a cozy and artistic atmosphere. The image feels elegant and unhurried." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVTJbBakADJNpwiZUqYpuhoxP3nc655U-UZy949sJrey2CKiNWofuTCk9_meUkH1DPXC4svCYZ3u6oMp_AIc7a6GKovhsVIEn-V7EW6hQ_hfBEVpBgytIVGODIa-Yl3-aX6P8bTBHQ97utUH2O8zV4qIBAXfEDDi8El1RLTFR-XO9ZusjcrCkX26hcNCzm_JVLdqHMSgO5_0VXG6oE29J_E-xSPy21lJDOYdKRO4ytg7hqNvSiIFPnRXnDiWbknoMYTXUqQVfnPvdu"/>
+</div>
+<div class="relative z-10 p-10 flex flex-col h-full justify-center">
+<span class="bg-primary text-on-primary font-bold px-3 py-1 rounded w-fit mb-4 text-label-caps">LIVE SESSIONS</span>
+<h3 class="font-display-lg text-headline-md text-on-surface mb-2">Weekend Jazz</h3>
+<p class="text-on-surface-variant mb-6 max-w-xs">Unwind with live jazz performances every Friday and Saturday from 8 PM.</p>
+<button class="text-primary font-bold flex items-center gap-2">View Schedule <span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Gallery -->
+<section class="py-24 bg-surface">
+<div class="px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto mb-16 flex justify-between items-end">
+<div>
+<h2 class="font-display-lg text-headline-md text-primary mb-2">In the Frame</h2>
+<p class="text-on-surface-variant">Follow our journey on social for daily inspiration.</p>
+</div>
+<button class="hidden md:flex items-center gap-2 border border-outline-variant px-6 py-3 rounded-full hover:border-primary transition-all">
+<span class="material-symbols-outlined">public</span>
+                Follow @CraftCoffee
+            </button>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2 px-2">
+<div class="aspect-square overflow-hidden group">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" data-alt="A stylish Instagram-worthy shot of a coffee flat white next to an open book and a designer pair of glasses. The lighting is bright and airy with high-end minimal décor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVlui13Y32ycJk1oJkbOxfHAChWcqRmzUC8GCI3ARap1EMts9qKRimhX2eR3pTxULVs87VqsraybmQ3Ogf5-A-ZXYMJFBV9FtpEy8buiMWKkmBYQWqytxTLcmtSvvY5iYSM9A0WZqO3qO-DTthl-nbyPrkQJYcJ01dD_1b0M7HDAua7fTiuzmAtmrgWepjKOK-yrcSkVCNxq_yLFJsLDFwczTuZr0J9aNrW9wU-_FJaCfTdDjp2L5NFXogqOTBK01lUK-e0lchbDw3"/>
+</div>
+<div class="aspect-square overflow-hidden group">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" data-alt="A night view of the café through the glass windows, glowing with warm amber light against the dark city street. The mood is intimate and inviting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkTNsrWQEAo_MabaXE2EIygkTSPcI4qHWJz6Su4zcHYK5oLOH3UxLLWZKq3LgNsxC0WKd25Lojzg9BMv3Hr1OjyjrKewF3jhOsVcfyQWikqQx9si0RwY2edZhpskIWibE_flJsphtwMMhHYwgNgUnPMi2CBH0l0vBSVp-B_osWS4P1U3CkRJDrfYXigTDu17onyVlAUsL-2TwDZpEkxMKqpL5WhefTgzpiF4vDz5dQtd8yfD5caJE4AschkxLA2Nz5vwGyLvZxporm"/>
+</div>
+<div class="aspect-square overflow-hidden group">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" data-alt="Macro photography of raw coffee beans in a wooden scoop. The detail shows the texture and organic quality of the beans under warm studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCI3HJGM4Q-fntEeF3DT8KUADlFfeObOsd4ac0YZqt1ViG7xd1My-1iR4W9RUuZensBwA2wZDxSi4Hg3UaVI_1EiIySViUsZsf1cBnJsdqF1fx-QF27-YRHia4J54mUsfjEnOtD8-zL3YcFvfab6R3NSnJIdgC5S-5fQN9e8yYhYQG0AlGP3n7odFfC7r_M89hpX1CVSw0udMhWjpKzmNPHc8HN9tOAC4euzQO6di7w5-ZXFdOpwLJTiyuLfKuZHtwuKY9g5UmzzybT"/>
+</div>
+<div class="aspect-square overflow-hidden group">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" data-alt="A modern minimalist café interior with clean lines and premium furniture. The atmosphere is quiet, light, and focused on design excellence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdDuA05YPjHg3j_1hS8DT7SJevMlypSWVf6GckToWflAWEFZhU76GNnbE-g2HgcFboUyoq8ubgEsuig-A-VXoW5oY6cahEaBSf2f36N1uXGERKb-3ibmnkFVPiZVcXjMsPR5lGeQavrzj-64MPoQQ6OdQuQqEF_zsGjdkSvyq-Bt_FO3-VLTQSJFpdnCmbzbnlZsYKNH5D7IXS2wcwO8q_uRadfz1AzjdE6acXRHbDIgP-t2tS_1fgV01l8aC-yllRHbO0M6CYha-p"/>
+</div>
+</div>
+</section>
+<!-- Testimonials -->
+<section class="py-24 px-margin-mobile md:px-margin-desktop bg-surface-container-low">
+<div class="max-w-4xl mx-auto text-center">
+<span class="material-symbols-outlined text-primary text-5xl mb-8" style="font-variation-settings: 'FILL' 1;">format_quote</span>
+<div class="space-y-8">
+<p class="font-display-lg text-headline-sm md:text-headline-md text-on-surface leading-relaxed italic">"Craft Coffee has redefined my morning routine. The attention to detail in their roasts is unparalleled, and the atmosphere is exactly what I need to start my day with focus and calm."</p>
+<div class="flex flex-col items-center gap-4">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary">
+<img class="w-full h-full object-cover" data-alt="A portrait of a professional-looking man with a friendly smile, representing a satisfied high-end customer. The lighting is clean and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAy2GeRCmmfrjT66hJF_CIH_BOD6XRoMy_W2MjfnjxypUp3JaVDF8HJ-ZDXLUqmM86LBlm-omrO9wCZ1duFVYwb6m-0KpQpcb6RqhlGxYBinS70EzbyzYxxfFlLKeQBYANqwFP4Pm4VqgVv4ejMPPsKmpT9JhopECFm2OikhnDGhLmgs8z1r6NTsGPrF0cxxZm0AivVRdsKS-DmM1WMav_oZoWzFsd5Odza4E2aPr26J7qZaYAzpvyV_yD9I42xPMoZaIcdiIufeiNz"/>
+</div>
+<div>
+<h4 class="font-body-lg font-bold text-on-surface">Julian Sterling</h4>
+<p class="text-label-caps text-on-surface-variant uppercase tracking-widest">Architect &amp; Coffee Enthusiast</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Reservation & Contact -->
+<section class="py-24 px-margin-mobile md:px-margin-desktop bg-surface">
+<div class="max-w-max-width mx-auto flex flex-col lg:flex-row gap-20">
+<div class="w-full lg:w-1/2">
+<h2 class="font-display-lg text-headline-md text-primary mb-6">Reserve Your Ritual</h2>
+<p class="text-body-lg text-on-surface-variant mb-12">Plan your visit for business meetings or quiet moments. We reserve our best corner tables for bookings.</p>
+<form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div class="space-y-2">
+<label class="text-label-caps text-on-surface-variant">Full Name</label>
+<input class="w-full bg-surface-container border-b border-outline-variant/30 focus:border-primary px-4 py-3 outline-none text-on-surface transition-all rounded-t-lg" placeholder="Enter your name" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="text-label-caps text-on-surface-variant">Email Address</label>
+<input class="w-full bg-surface-container border-b border-outline-variant/30 focus:border-primary px-4 py-3 outline-none text-on-surface transition-all rounded-t-lg" placeholder="Enter your email" type="email"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="space-y-2">
+<label class="text-label-caps text-on-surface-variant">Date</label>
+<input class="w-full bg-surface-container border-b border-outline-variant/30 focus:border-primary px-4 py-3 outline-none text-on-surface transition-all rounded-t-lg" type="date"/>
+</div>
+<div class="space-y-2">
+<label class="text-label-caps text-on-surface-variant">Time</label>
+<select class="w-full bg-surface-container border-b border-outline-variant/30 focus:border-primary px-4 py-3 outline-none text-on-surface transition-all rounded-t-lg">
+<option>09:00 AM</option>
+<option>02:00 PM</option>
+<option>08:00 PM</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="text-label-caps text-on-surface-variant">Guests</label>
+<input class="w-full bg-surface-container border-b border-outline-variant/30 focus:border-primary px-4 py-3 outline-none text-on-surface transition-all rounded-t-lg" placeholder="2" type="number"/>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary font-bold py-4 rounded-full hover:bg-primary-container transition-all shadow-lg active:scale-95">Confirm Reservation</button>
+</form>
+</div>
+<div class="w-full lg:w-1/2 flex flex-col gap-base">
+<div class="h-full min-h-[400px] rounded-2xl overflow-hidden grayscale contrast-125 brightness-75 border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="A stylized minimalist map of a modern urban district with clean lines and monochromatic tones. One specific point is highlighted with a subtle golden glow, indicating the café's premium location." data-location="London" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPWysE_OWTFPuW4V_NX7CcvZitmD1nltzB3-67H1zpIV_R4A7GJ3tPrRc8qj8HfsXVXikfPiWO9eaVKZIAz1lLbinOdOzMActfLwVms8dEfa8uOFsbVU6u4Jza2Uc-lxqPWAcqmgeRxiRhb2ac_ECELYIxBnCdUtJJiUTpwJtIW6TwcVhaXmUL-v8k-YYoP-Y5My-AMOCCRZYuBmNOdAJUXkuOyr_tSGhtOBg_LaBeyEH5TWSBiUPceFmc6gs_LtjVmnx8fbgvboCI"/>
+</div>
+<div class="p-8 bg-surface-container rounded-2xl border border-outline-variant/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+<div>
+<p class="text-label-caps text-primary mb-2">VISIT US</p>
+<p class="text-body-lg text-on-surface">123 Roaster Avenue, Bean District<br/>Craft City, CC 45678</p>
+</div>
+<div class="flex gap-4">
+<a class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-variant text-on-surface hover:text-primary transition-all" href="#"><span class="material-symbols-outlined">share</span></a>
+<a class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-variant text-on-surface hover:text-primary transition-all" href="#"><span class="material-symbols-outlined">call</span></a>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/10 py-20">
+<div class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop">
+<div class="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
+<div class="max-w-xs">
+<span class="font-display-lg text-headline-sm text-primary mb-6 block">Craft Coffee</span>
+<p class="text-on-surface-variant mb-8">Artisanal roasting, mindful brewing, and a dedication to the perfect cup of coffee since 2024.</p>
+<div class="flex gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">facebook</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">photo_camera</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">music_video</button>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-12">
+<div class="flex flex-col gap-4">
+<span class="text-on-surface font-bold">Experience</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Our Menu</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Reservations</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Gift Cards</a>
+</div>
+<div class="flex flex-col gap-4">
+<span class="text-on-surface font-bold">Company</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Our Story</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Careers</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Sustainability</a>
+</div>
+<div class="flex flex-col gap-4">
+<span class="text-on-surface font-bold">Support</span>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Shipping</a>
+</div>
+</div>
+</div>
+<div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-outline-variant/5 text-on-surface-variant text-label-caps">
+<p>© 2024 Craft Coffee Roasters. All rights reserved.</p>
+<p class="mt-4 md:mt-0">Designed for the coffee ritual.</p>
+</div>
+</div>
+</footer>
+<!-- Floating UI Elements -->
+<button class="fixed bottom-margin-mobile right-margin-mobile w-16 h-16 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center z-[70] hover:scale-110 active:scale-95 transition-all group">
+<span class="material-symbols-outlined text-3xl">shopping_cart</span>
+<span class="absolute -top-1 -right-1 bg-on-primary text-primary w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center border-2 border-primary">2</span>
+</button>
+<div class="fixed bottom-margin-mobile left-margin-mobile hidden lg:flex items-center gap-4 p-2 bg-surface/80 backdrop-blur-xl rounded-full border border-outline-variant/20 z-[70]">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</button>
+<span class="text-label-caps text-on-surface-variant pr-4">Craft AI Assistant</span>
+</div>
+    <script>
+    (() => {
+      "use strict";
+
+      const TOTAL_FRAMES = 204;
+      const FRAME_PATH = (i) => `assets/frames/ezgif-frame-${String(i).padStart(3, "0")}.jpg`;
+
+      const canvas = document.getElementById("frameCanvas");
+      const ctx = canvas.getContext("2d");
+      const loader = document.getElementById("loader");
+      const loaderBar = document.getElementById("loaderBar");
+      const loaderPercent = document.getElementById("loaderPercent");
+      const heroOverlay = document.getElementById("heroOverlay");
+      const scrollIndicator = document.getElementById("scrollIndicator");
+      const scrollProgress = document.getElementById("scrollProgress");
+      const heroSection = document.getElementById("hero");
+
+      const images = [];
+      let currentFrame = 0;
+      let targetFrame = 0;
+      let animFrameId = null;
+
+      function preloadImages() {
+        let loaded = 0;
+        return new Promise((resolve) => {
+          for (let i = 1; i <= TOTAL_FRAMES; i++) {
+            const img = new Image();
+            img.src = FRAME_PATH(i);
+            img.onload = () => {
+              loaded++;
+              const pct = Math.round((loaded / TOTAL_FRAMES) * 100);
+              loaderBar.style.width = pct + "%";
+              loaderPercent.textContent = pct + "%";
+              if (loaded === TOTAL_FRAMES) resolve();
+            };
+            img.onerror = () => {
+              loaded++;
+              const pct = Math.round((loaded / TOTAL_FRAMES) * 100);
+              loaderBar.style.width = pct + "%";
+              loaderPercent.textContent = pct + "%";
+              if (loaded === TOTAL_FRAMES) resolve();
+            };
+            images[i - 1] = img;
+          }
+        });
+      }
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        drawFrame(currentFrame);
+      }
+
+      function drawFrame(index) {
+        if (!images[index] || !images[index].complete) return;
+        const img = images[index];
+        const cw = canvas.width;
+        const ch = canvas.height;
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        const canvasRatio = cw / ch;
+        let drawW, drawH, drawX, drawY;
+        if (canvasRatio > imgRatio) {
+          drawW = cw;
+          drawH = cw / imgRatio;
+          drawX = 0;
+          drawY = (ch - drawH) / 2;
+        } else {
+          drawH = ch;
+          drawW = ch * imgRatio;
+          drawX = (cw - drawW) / 2;
+          drawY = 0;
+        }
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      }
+
+      function onScroll() {
+        const heroTop = window.scrollY;
+        const heroHeight = heroSection.offsetHeight - window.innerHeight;
+        const scrollFraction = Math.max(0, Math.min(1, heroTop / heroHeight));
+        targetFrame = Math.min(TOTAL_FRAMES - 1, Math.floor(scrollFraction * TOTAL_FRAMES));
+        const overlayOpacity = 1 - Math.min(1, scrollFraction * 6);
+        heroOverlay.style.opacity = Math.max(0, overlayOpacity);
+        heroOverlay.style.transform = `translateY(${scrollFraction * -60}px)`;
+        if (scrollFraction > 0.02) {
+          scrollIndicator.classList.add("hidden");
+        } else {
+          scrollIndicator.classList.remove("hidden");
+        }
+        scrollProgress.style.width = (scrollFraction * 100) + "%";
+      }
+
+      function animate() {
+        if (currentFrame !== targetFrame) {
+          const diff = targetFrame - currentFrame;
+          const step = Math.sign(diff) * Math.max(1, Math.abs(diff) * 0.25);
+          if (Math.abs(diff) <= 1) {
+            currentFrame = targetFrame;
+          } else {
+            currentFrame = Math.round(currentFrame + step);
+          }
+          currentFrame = Math.max(0, Math.min(TOTAL_FRAMES - 1, currentFrame));
+          drawFrame(currentFrame);
+        }
+        animFrameId = requestAnimationFrame(animate);
+      }
+
+      async function init() {
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+        await preloadImages();
+        drawFrame(0);
+        loader.classList.add("hidden");
+        window.addEventListener("scroll", onScroll, { passive: true });
+        animate();
+        onScroll();
+      }
+
+      init();
+    })();
+    </script>
+</body>
+</html>
